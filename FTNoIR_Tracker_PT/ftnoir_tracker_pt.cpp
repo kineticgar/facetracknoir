@@ -3,6 +3,8 @@
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
  * copyright notice and this permission notice appear in all copies.
+ *
+ * Bugfix V171: WVR 20130508 - Invert pitch.
  */
 
 #include "ftnoir_tracker_pt.h"
@@ -239,7 +241,7 @@ bool Tracker::GiveHeadPoseData(THeadPoseData *data)
 			data->yaw   = rad2deg * alpha;
 		}
 		if (bEnablePitch) {
-			data->pitch = rad2deg * beta;
+			data->pitch = -1.0f * rad2deg * beta;
 		}
 		if (bEnableRoll) {
 			data->roll  = rad2deg * gamma;
