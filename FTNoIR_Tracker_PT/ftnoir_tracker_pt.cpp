@@ -3,8 +3,6 @@
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
  * copyright notice and this permission notice appear in all copies.
- *
- * Bugfix V171: WVR 20130508 - Invert pitch.
  */
 
 #include "ftnoir_tracker_pt.h"
@@ -19,6 +17,9 @@ using namespace cv;
 using namespace boost;
 
 //#define PT_PERF_LOG	//log performance
+
+const float rad2deg = 180.0/3.14159265;
+const float deg2rad = 1.0/rad2deg;
 
 //-----------------------------------------------------------------------------
 Tracker::Tracker()
@@ -80,6 +81,7 @@ void Tracker::run()
 			new_frame = camera.get_frame(dt, &frame);
 			if (new_frame && !frame.empty())
 			{
+				frame = frame_rotation.rotate_frame(frame);
 				const std::vector<cv::Vec2f>& points = point_extractor.extract_points(frame, dt, draw_frame);
 				tracking_valid = point_tracker.track(points, camera.get_info().f, dt);
 				frame_count++;
@@ -104,6 +106,7 @@ void Tracker::apply(const TrackerSettings& settings)
 	camera.set_res(settings.cam_res_x, settings.cam_res_y);	
 	camera.set_fps(settings.cam_fps);
 	camera.set_f(settings.cam_f);
+	frame_rotation.rotation = static_cast<FrameRotation::Rotation>(settings.cam_roll);
 	point_extractor.threshold_val = settings.threshold;
 	point_extractor.min_size = settings.min_point_size;
 	point_extractor.max_size = settings.max_point_size;
@@ -112,16 +115,24 @@ void Tracker::apply(const TrackerSettings& settings)
 	sleep_time = settings.sleep_time;
 	point_tracker.dt_reset = settings.reset_time / 1000.0;
 	draw_frame = settings.video_widget;
-	cam_pitch = settings.cam_pitch;
-
-	bEnableRoll = settings.bEnableRoll;
+	bEnableRoll  = settings.bEnableRoll;
 	bEnablePitch = settings.bEnablePitch;
-	bEnableYaw = settings.bEnableYaw;
-	bEnableX = settings.bEnableX;
-	bEnableY = settings.bEnableY;
-	bEnableZ = settings.bEnableZ;
+	bEnableYaw   = settings.bEnableYaw;
+	bEnableX     = settings.bEnableX;
+	bEnableY     = settings.bEnableY;
+	bEnableZ     = settings.bEnableZ;
 
 	t_MH = settings.t_MH;
+	R_GC =  Matx33f( cos(deg2rad*settings.cam_yaw), 0, sin(deg2rad*settings.cam_yaw),
+		                                         0, 1,                             0,
+		            -sin(deg2rad*settings.cam_yaw), 0, cos(deg2rad*settings.cam_yaw));
+	R_GC = R_GC * Matx33f( 1,                                0,                               0,
+		                   0,  cos(deg2rad*settings.cam_pitch), sin(deg2rad*settings.cam_pitch),
+		                   0, -sin(deg2rad*settings.cam_pitch), cos(deg2rad*settings.cam_pitch));
+
+	FrameTrafo X_MH(Matx33f::eye(), t_MH);
+	X_GH_0 = R_GC * X_MH;
+
 	qDebug()<<"Tracker::apply ends";
 }
 
@@ -137,7 +148,7 @@ void Tracker::center()
 	QMutexLocker lock(&mutex);
 	FrameTrafo X_CM_0 = point_tracker.get_pose();
 	FrameTrafo X_MH(Matx33f::eye(), t_MH);
-	X_CH_0 = X_CM_0 * X_MH;
+	X_GH_0 = R_GC * X_CM_0 * X_MH;
 }
 
 //-----------------------------------------------------------------------------
@@ -165,14 +176,14 @@ void Tracker::refreshVideo()
 	if (video_widget)
 	{
 		Mat frame_copy;
-		shared_ptr< vector<Vec2f> > points;
+		boost::shared_ptr< vector<Vec2f> > points;
 		{
 			QMutexLocker lock(&mutex);
 			if (!draw_frame || frame.empty()) return;
 		
 			// copy the frame and points from the tracker thread
 			frame_copy = frame.clone();
-			points = shared_ptr< vector<Vec2f> >(new vector<Vec2f>(point_extractor.get_points()));
+			points = boost::shared_ptr< vector<Vec2f> >(new vector<Vec2f>(point_extractor.get_points()));
 		}
 		
 		video_widget->update(frame_copy, points);
@@ -191,8 +202,6 @@ void Tracker::StopTracker(bool exit)
 
 bool Tracker::GiveHeadPoseData(THeadPoseData *data)
 {
-	const float rad2deg = 180.0/3.14159265;
-	const float deg2rad = 1.0/rad2deg;
 	{
 		QMutexLocker lock(&mutex);
 
@@ -200,52 +209,31 @@ bool Tracker::GiveHeadPoseData(THeadPoseData *data)
 
 		FrameTrafo X_CM = point_tracker.get_pose();
 		FrameTrafo X_MH(Matx33f::eye(), t_MH);
-		FrameTrafo X_CH = X_CM * X_MH;
-
-		Matx33f R = X_CH.R * X_CH_0.R.t(); 
-		Vec3f t   = X_CH.t - X_CH_0.t;		
-		
-		// correct for camera pitch
-		Matx33f R_CP( 1, 0, 0,
-			          0,  cos(deg2rad*cam_pitch), sin(deg2rad*cam_pitch),
-					  0, -sin(deg2rad*cam_pitch), cos(deg2rad*cam_pitch));
-		R = R_CP * R * R_CP.t();
-		t = R_CP * t;
+		FrameTrafo X_GH = R_GC * X_CM * X_MH;
+		Matx33f R = X_GH.R * X_GH_0.R.t(); 
+		Vec3f   t = X_GH.t - X_GH_0.t;		
 
 		// get translation(s)
-		if (bEnableX) {
-			data->x = t[0] / 10.0;	// convert to cm
-		}
-		if (bEnableY) {
-			data->y = t[1] / 10.0;
-		}
-		if (bEnableZ) {
-			data->z = t[2] / 10.0;
-		}
+		if (bEnableX) data->x = t[0] / 10.0;	// convert to cm
+		if (bEnableY) data->y = t[1] / 10.0;
+		if (bEnableZ) data->z = t[2] / 10.0;
 
-		// translate rotation matrix from opengl (G) to roll-pitch-yaw (R) frame
+		// translate rotation matrix from opengl (G) to roll-pitch-yaw (E) frame
 		// -z -> x, y -> z, x -> -y
-		Matx33f R_RG( 0, 0,-1,
-			         -1, 0, 0,
-					  0, 1, 0);
-		R = R_RG * R * R_RG.t();
+		Matx33f R_EG( 0, 0,-1,
+		             -1, 0, 0,
+		              0, 1, 0);
+		R = R_EG * R * R_EG.t();
 
 		// extract rotation angles
 		float alpha, beta, gamma;
-		//beta = atan2( -R(2,0), sqrt(R(0,0)*R(0,0) + R(1,0)*R(1,0)) );
-		beta = atan2( -R(2,0), sqrt(R(2,1)*R(2,1) + R(2,2)*R(2,2)) );
+		beta  = atan2( -R(2,0), sqrt(R(2,1)*R(2,1) + R(2,2)*R(2,2)) );
 		alpha = atan2( R(1,0), R(0,0));
 		gamma = atan2( R(2,1), R(2,2));		
 
-		if (bEnableYaw) {
-			data->yaw   = rad2deg * alpha;
-		}
-		if (bEnablePitch) {
-			data->pitch = -1.0f * rad2deg * beta;
-		}
-		if (bEnableRoll) {
-			data->roll  = rad2deg * gamma;
-		}
+		if (bEnableYaw)   data->yaw   =   rad2deg * alpha;
+		if (bEnablePitch) data->pitch = - rad2deg * beta;	// FTNoIR expects a minus here
+		if (bEnableRoll)  data->roll  =   rad2deg * gamma;
 	}
 	return true;
 }

@@ -90,7 +90,7 @@ void CVCamera::stop()
 
 bool CVCamera::_get_frame(Mat* frame)
 {
-    if (cap && cvGrabFrame(cap) != 0)
+	if (cap && cvGrabFrame(cap) != 0)
 	{
 		// retrieve frame
 		IplImage* _img = cvRetrieveFrame(cap, 0);
@@ -146,8 +146,6 @@ void VICamera::start()
 {
 	if (desired_index >= 0)
 	{		
-
-
 		if (cam_desired.res_x == 0 || cam_desired.res_y == 0)
 			VI.setupDevice(desired_index);
 		else
@@ -224,3 +222,29 @@ void VICamera::_set_res()
 	if (active) restart();
 }
 
+
+// ----------------------------------------------------------------------------
+Mat FrameRotation::rotate_frame(Mat frame)
+{	
+	switch (rotation)
+	{
+	case CLOCKWISE:
+		{
+			Mat dst;
+			transpose(frame, dst);
+			flip(dst, dst, 1);
+			return dst;
+		}
+
+	case COUNTER_CLOCKWISE:
+		{
+			Mat dst;
+			transpose(frame, dst);
+			flip(dst, dst, 0);
+			return dst;
+		}
+	
+	default:
+		return frame;
+	}
+}

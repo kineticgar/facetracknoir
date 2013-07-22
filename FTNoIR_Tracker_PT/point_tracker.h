@@ -29,10 +29,21 @@ inline FrameTrafo operator*(const FrameTrafo& X, const FrameTrafo& Y)
 	return FrameTrafo(X.R*Y.R, X.R*Y.t + X.t);
 }
 
+inline FrameTrafo operator*(const cv::Matx33f& X, const FrameTrafo& Y)
+{
+	return FrameTrafo(X*Y.R, X*Y.t);
+}
+
+inline FrameTrafo operator*(const FrameTrafo& X, const cv::Matx33f& Y)
+{
+	return FrameTrafo(X.R*Y, X.t);
+}
+
 inline cv::Vec3f operator*(const FrameTrafo& X, const cv::Vec3f& v)
 {
 	return X.R*v + X.t;
 }
+
 
 // ----------------------------------------------------------------------------
 // Describes a 3-point model

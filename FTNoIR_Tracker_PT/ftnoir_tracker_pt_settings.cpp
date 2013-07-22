@@ -20,19 +20,21 @@ void TrackerSettings::load_ini()
 
 	iniFile.beginGroup( "PointTracker" );
 
-	cam_index      = iniFile.value("CameraId", 0).toInt();
-	cam_f          = iniFile.value("CameraF", 1).toFloat();
+	cam_index      = iniFile.value("CameraId",     0).toInt();
+	cam_f          = iniFile.value("CameraF",      1).toFloat();
 	cam_res_x      = iniFile.value("CameraResX", 640).toInt();
 	cam_res_y      = iniFile.value("CameraResY", 480).toInt();
-	cam_fps        = iniFile.value("CameraFPS", 30).toInt();
-	cam_pitch      = iniFile.value("CameraPitch", 0).toInt();
+	cam_fps        = iniFile.value("CameraFPS",   30).toInt();
+	cam_roll       = iniFile.value("CameraRoll",   0).toInt();
+	cam_pitch      = iniFile.value("CameraPitch",  0).toInt();
+	cam_yaw        = iniFile.value("CameraYaw",    0).toInt();
 	threshold      = iniFile.value("PointExtractThreshold", 128).toInt();
 	min_point_size = iniFile.value("PointExtractMinSize", 2).toInt();
 	max_point_size = iniFile.value("PointExtractMaxSize", 50).toInt();
-	M01[0]  = iniFile.value("PointModelM01x", 0).toFloat();
-	M01[1]  = iniFile.value("PointModelM01y", 40).toFloat();
+	M01[0]  = iniFile.value("PointModelM01x",   0).toFloat();
+	M01[1]  = iniFile.value("PointModelM01y",  40).toFloat();
 	M01[2]  = iniFile.value("PointModelM01z", -30).toFloat();
-	M02[0]  = iniFile.value("PointModelM02x", 0).toFloat();
+	M02[0]  = iniFile.value("PointModelM02x",   0).toFloat();
 	M02[1]  = iniFile.value("PointModelM02y", -70).toFloat();
 	M02[2]  = iniFile.value("PointModelM02z", -80).toFloat();
 	t_MH[0] = iniFile.value("tMHx", 0).toFloat();
@@ -40,15 +42,15 @@ void TrackerSettings::load_ini()
 	t_MH[2] = iniFile.value("tMHz", 0).toFloat();
 	dyn_pose_res = iniFile.value("DynamicPoseResolution", true).toBool();
 	video_widget = iniFile.value("VideoWidget", true).toBool();
-	sleep_time   = iniFile.value("SleepTime", 10).toInt();
+	sleep_time   = iniFile.value("SleepTime",   10).toInt();
 	reset_time   = iniFile.value("ResetTime", 1000).toInt();
 
-	bEnableRoll = iniFile.value( "EnableRoll", 1 ).toBool();
-	bEnablePitch = iniFile.value( "EnablePitch", 1 ).toBool();
-	bEnableYaw = iniFile.value( "EnableYaw", 1 ).toBool();
-	bEnableX = iniFile.value( "EnableX", 1 ).toBool();
-	bEnableY = iniFile.value( "EnableY", 1 ).toBool();
-	bEnableZ = iniFile.value( "EnableZ", 1 ).toBool();
+	bEnableRoll  = iniFile.value("EnableRoll",  1).toBool();
+	bEnablePitch = iniFile.value("EnablePitch", 1).toBool();
+	bEnableYaw   = iniFile.value("EnableYaw",   1).toBool();
+	bEnableX = iniFile.value("EnableX", 1).toBool();
+	bEnableY = iniFile.value("EnableY", 1).toBool();
+	bEnableZ = iniFile.value("EnableZ", 1).toBool();
 
 	iniFile.endGroup();
 }
@@ -63,12 +65,14 @@ void TrackerSettings::save_ini() const
 
 	iniFile.beginGroup ( "PointTracker" );
 
-	iniFile.setValue("CameraId", cam_index);
-	iniFile.setValue("CameraF", cam_f);
-	iniFile.setValue("CameraResX", cam_res_x);
-	iniFile.setValue("CameraResY", cam_res_y);
-	iniFile.setValue("CameraFPS", cam_fps);
+	iniFile.setValue("CameraId",    cam_index);
+	iniFile.setValue("CameraF",     cam_f);
+	iniFile.setValue("CameraResX",  cam_res_x);
+	iniFile.setValue("CameraResY",  cam_res_y);
+	iniFile.setValue("CameraFPS",   cam_fps);
+	iniFile.setValue("CameraRoll",  cam_roll);
 	iniFile.setValue("CameraPitch", cam_pitch);
+	iniFile.setValue("CameraYaw",   cam_yaw);
 	iniFile.setValue("PointExtractThreshold", threshold);
 	iniFile.setValue("PointExtractMinSize", min_point_size);
 	iniFile.setValue("PointExtractMaxSize", max_point_size);
@@ -86,9 +90,9 @@ void TrackerSettings::save_ini() const
 	iniFile.setValue("SleepTime", sleep_time);
 	iniFile.setValue("ResetTime", reset_time);
 
-	iniFile.setValue( "EnableRoll", bEnableRoll );
+	iniFile.setValue( "EnableRoll",  bEnableRoll );
 	iniFile.setValue( "EnablePitch", bEnablePitch );
-	iniFile.setValue( "EnableYaw", bEnableYaw );
+	iniFile.setValue( "EnableYaw",   bEnableYaw );
 	iniFile.setValue( "EnableX", bEnableX );
 	iniFile.setValue( "EnableY", bEnableY );
 	iniFile.setValue( "EnableZ", bEnableZ );
@@ -108,10 +112,10 @@ void TrackerDialogSettings::load_ini()
 	iniFile.beginGroup( "PointTrackerDialog" );
 
 	active_model_panel = iniFile.value("ActiveModelPanel", MODEL_CLIP).toInt();
-	M01x    = iniFile.value("CustomM01x", 0).toInt();
-	M01y    = iniFile.value("CustomM01y", 40).toInt();
+	M01x    = iniFile.value("CustomM01x",   0).toInt();
+	M01y    = iniFile.value("CustomM01y",  40).toInt();
 	M01z    = iniFile.value("CustomM01z", -30).toInt();
-	M02x    = iniFile.value("CustomM02x", 0).toInt();
+	M02x    = iniFile.value("CustomM02x",   0).toInt();
 	M02y    = iniFile.value("CustomM02y", -70).toInt();
 	M02z    = iniFile.value("CustomM02z", -80).toInt();
 	clip_ty = iniFile.value("ClipTopHeight", 40).toInt();

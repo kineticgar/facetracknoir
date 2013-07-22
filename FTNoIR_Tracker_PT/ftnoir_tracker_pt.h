@@ -42,11 +42,11 @@ public:
 	void run();
 
 	void get_pose(FrameTrafo* X_CM) { QMutexLocker lock(&mutex); *X_CM = point_tracker.get_pose(); }
-	int get_n_points() { QMutexLocker lock(&mutex); return point_extractor.get_points().size(); }
+	int  get_n_points() { QMutexLocker lock(&mutex); return point_extractor.get_points().size(); }
 	void get_cam_info(CamInfo* info) { QMutexLocker lock(&mutex); *info = camera.get_info(); }
 
 protected:	
-	FrameTrafo X_CH_0; // for centering
+	FrameTrafo X_GH_0; // for centering
 
 	QMutex mutex;
 	cv::Mat frame;	// the output frame for display
@@ -60,12 +60,13 @@ protected:
 	int commands;
 	
 	VICamera camera;
+	FrameRotation frame_rotation;
 	PointExtractor point_extractor;
 	PointTracker point_tracker;
 	bool tracking_valid;
 
-	cv::Vec3f t_MH;
-	int cam_pitch;
+	cv::Vec3f t_MH; // translation from model frame to head frame
+	cv::Matx33f R_GC; // rotation from opengl reference frame to camera frame
 
 	bool draw_frame;
 	int sleep_time;

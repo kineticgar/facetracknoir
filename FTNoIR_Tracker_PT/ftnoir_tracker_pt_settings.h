@@ -21,7 +21,9 @@ struct TrackerSettings
 	int cam_res_x;
 	int cam_res_y;
 	int cam_fps;
+	int cam_roll;
 	int cam_pitch;
+	int cam_yaw;
 
 	// point extraction
 	int threshold;

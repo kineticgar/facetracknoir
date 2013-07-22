@@ -19,7 +19,7 @@
 //-----------------------------------------------------------------------------
 class TrackerDialog : public QWidget, Ui::UICPTClientControls, public ITrackerDialog
 {
-    Q_OBJECT
+	Q_OBJECT
 public:
 	TrackerDialog();
 	~TrackerDialog();
@@ -41,8 +41,10 @@ protected slots:
 	void set_cam_f(double val)       { settings.cam_f = val;          settings_changed(); }
 	void set_cam_res_x(int val)      { settings.cam_res_x = val;      settings_changed(); }
 	void set_cam_res_y(int val)      { settings.cam_res_y = val;      settings_changed(); }
-	void set_cam_fps(int val)        { settings.cam_fps = val;        settings_changed(); }
+	void set_cam_fps(int val)        { settings.cam_fps = val;        settings_changed(); }	
+	void set_cam_roll(int idx);
 	void set_cam_pitch(int val)      { settings.cam_pitch = val;      settings_changed(); }
+    void set_cam_yaw(int val)        { settings.cam_yaw = val;        settings_changed(); }
 	void set_min_point_size(int val) { settings.min_point_size = val; settings_changed(); }
 	void set_max_point_size(int val) { settings.max_point_size = val; settings_changed(); }
 	void set_threshold(int val)      { settings.threshold = val;      settings_changed(); }

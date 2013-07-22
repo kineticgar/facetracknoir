@@ -10,6 +10,7 @@
 
 #include <opencv2/opencv.hpp>
 #include "videoInput/videoInput.h"
+#include <boost/shared_ptr.hpp>
 
 // ----------------------------------------------------------------------------
 struct CamInfo
@@ -26,6 +27,7 @@ struct CamInfo
 // base class for cameras
 class Camera
 {
+	friend class RotatedCamera;
 public:
 	Camera() : dt_valid(0), dt_mean(0), desired_index(0), active_index(-1), active(false) {}
 	virtual ~Camera() {}
@@ -51,7 +53,7 @@ protected:
 	// get a frame from the camera
 	virtual bool _get_frame(cv::Mat* frame) = 0;
 
-	// update the camera
+	// update the camera using cam_desired, write res and f to cam_info if successful
 	virtual void _set_index() = 0;
 	virtual void _set_f() = 0;
 	virtual void _set_fps() = 0;
@@ -111,6 +113,23 @@ protected:
 	videoInput VI;
 	cv::Mat new_frame;
 	unsigned char* frame_buffer;
+};
+
+
+// ----------------------------------------------------------------------------
+// frame rotation
+class FrameRotation 
+{
+public:
+	typedef enum Rotation
+	{
+		CLOCKWISE = -1,
+		ZERO = 0,
+		COUNTER_CLOCKWISE = 1
+	};
+	Rotation rotation;
+
+	cv::Mat rotate_frame(cv::Mat frame);
 };
 
 #endif //CAMERA_H
